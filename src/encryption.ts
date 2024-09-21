@@ -104,14 +104,12 @@ async function getKmsKeyFromMappingTable(
     ? { tenantId }
     : { tableName: model }
 
-  const result = await client.queryRaw`
-    SELECT kmsKeyId 
-    FROM ${keys.kmsKeyMappingTable}
-    WHERE ${where}
-    LIMIT 1
-  `
+  const result = await client[keys.kmsKeyMappingTable].findFirst({
+    where,
+    select: { kmsKeyId: true }
+  })
 
-  return result[0]?.kmsKeyId
+  return result?.kmsKeyId
 }
 
 export async function encryptOnWrite<Models extends string, Actions extends string>(

@@ -1,0 +1,8 @@
+branch: 'feature/aws-kms-dek-encryption'
+gha_enabled: True
+description: 'Prisma Field Encrption extension/middleware written in typescript. Tests should go in <filename>.test.ts. Raw queries should not be used. This package uses [semantic-release](https://semantic-release.gitbook.io/semantic-release) to manage versions. Therefore, make sure your commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format.
+There is a pre-commit hook in place that lints commit messages to ensure they follow the format.'
+draft: False
+ 
+# This is a list of directories that Sweep will not be able to edit. In our example, Sweep is unable to modify the .github folder as we do not want Sweep to modify our GitHub Actions.
+blocked_dirs: [".github/"]
