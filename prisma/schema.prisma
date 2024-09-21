@@ -1,3 +1,4 @@
+// 1. Example using cloak/local encryption key
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
@@ -47,3 +48,87 @@ model BigIntCursorTest {
   key   String /// @encrypted
   value Int
 }
+
+// 2. Example using AWS KMS with a global KMS key ID
+//model GlobalKmsUser {
+//  id        Int     @id @default(autoincrement())
+//  email     String  @unique
+//  name      String? /// @encrypted
+//  posts     GlobalKmsPost[]
+//}
+//
+//model GlobalKmsPost {
+//  id         Int             @id @default(autoincrement())
+//  title      String          /// @encrypted
+//  content    String?         /// @encrypted
+//  published  Boolean         @default(false)
+//  author     GlobalKmsUser   @relation(fields: [authorId], references: [id])
+//  authorId   Int
+//  categories GlobalKmsCategory[]
+//}
+//
+//model GlobalKmsCategory {
+//  id    Int            @id @default(autoincrement())
+//  name  String
+//  posts GlobalKmsPost[]
+//}
+
+// 3. Example using AWS KMS with key IDs per tenant
+//model PerTenantKmsUser {
+//  id        Int     @id @default(autoincrement())
+//  tenantId  String
+//  email     String  @unique
+//  name      String? /// @encrypted?tenantIdField=tenantId
+//  posts     PerTenantKmsPost[]
+//}
+//
+//model PerTenantKmsPost {
+//  id         Int                 @id @default(autoincrement())
+//  tenantId   String
+//  title      String              /// @encrypted?tenantIdField=tenantId
+//  content    String?             /// @encrypted?tenantIdField=tenantId
+//  published  Boolean             @default(false)
+//  author     PerTenantKmsUser    @relation(fields: [authorId], references: [id])
+//  authorId   Int
+//  categories PerTenantKmsCategory[]
+//}
+//
+//model PerTenantKmsCategory {
+//  id    Int                @id @default(autoincrement())
+//  name  String
+//  posts PerTenantKmsPost[]
+//}
+//
+//model KmsKeyMapping {
+//  tenantId String @id
+//  kmsKeyId String
+//}
+
+// 4. Example using AWS KMS with key IDs per table
+//model PerTableKmsUser {
+//  id        Int     @id @default(autoincrement())
+//  email     String  @unique
+//  name      String? /// @encrypted
+//  posts     PerTableKmsPost[]
+//}
+//
+//model PerTableKmsPost {
+//  id         Int                @id @default(autoincrement())
+//  title      String             /// @encrypted
+//  content    String?            /// @encrypted
+//  published  Boolean            @default(false)
+//  author     PerTableKmsUser    @relation(fields: [authorId], references: [id])
+//  authorId   Int
+//  categories PerTableKmsCategory[]
+//}
+//
+//model PerTableKmsCategory {
+//  id    Int               @id @default(autoincrement())
+//  name  String
+//  posts PerTableKmsPost[]
+//}
+//
+//model KmsKeyMapping {
+//  tableName String @id
+//  kmsKeyId  String
+//}

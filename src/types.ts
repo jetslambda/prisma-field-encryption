@@ -70,6 +70,10 @@ export interface Configuration {
   encryptionKey?: string
   decryptionKeys?: string[]
   dmmf?: Readonly<DMMFDocument>
+  kmsKeyId?: string
+  keyStrategy?: 'perTable' | 'perTenant' // Change this
+  useKms?: boolean
+  kmsKeyMappingTable?: string
 }
 
 export type HashFieldConfiguration = {
@@ -94,4 +98,6 @@ export interface FieldConfiguration {
   encrypt: boolean
   strictDecryption: boolean
   hash?: Omit<HashFieldConfiguration, 'sourceField'>
+  kmsKeyId?: string // Add this
+  tenantIdField?: string // Add this
 }

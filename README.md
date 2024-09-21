@@ -372,8 +372,16 @@ throw an error when running `prisma generate`.
 
 ## Key management
 
-This library is based on [@47ng/cloak](https://github.com/47ng/cloak), which comes
-with key management built-in. Here are the basic principles:
+This library supports multiple key management strategies:
+
+1. Local encryption keys
+2. AWS KMS with a global KMS key ID
+3. AWS KMS with KMS key IDs per table
+4. AWS KMS with KMS key IDs per tenant
+
+### Local encryption keys
+
+This is the default strategy and uses local encryption keys managed by [@47ng/cloak](https://github.com/47ng/cloak). Here are the basic principles:
 
 - You have one current encryption key
 - You can have many decryption keys for existing data
@@ -405,6 +413,167 @@ _Tip: the current encryption key is already part of the decryption keys, no need
 
 Key rotation on existing fields (decrypt with old key and re-encrypt with the
 new one) is done by [data migrations](#migrations).
+
+### AWS KMS with a global KMS key ID
+
+To use AWS KMS for key management with a single global KMS key ID for all tables and tenants, set the following configuration options:
+
+```ts
+fieldEncryptionExtension({
+  useKms: true,
+  kmsKeyId: 'your-global-kms-key-id'
+})
+```
+
+Or via environment variables:
+
+```shell
+PRISMA_FIELD_ENCRYPTION_USE_KMS=true
+PRISMA_FIELD_ENCRYPTION_KMS_KEY_ID=your-global-kms-key-id
+```
+
+No additional configuration is needed in the Prisma schema for this use case. All encrypted fields across all models will use the same global KMS key ID for encryption and decryption.
+
+Example Prisma schema for global KMS key ID:
+
+```prisma
+model User {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  name      String? /// @encrypted
+  posts     Post[]
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String     /// @encrypted 
+  content    String?    /// @encrypted
+  published  Boolean    @default(false)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]
+}
+```
+
+### AWS KMS with KMS key IDs per table
+
+To use AWS KMS with different KMS key IDs for each table, set the following configuration options:
+
+```ts
+fieldEncryptionExtension({
+  useKms: true,
+  keyStrategy: 'perTable',
+  kmsKeyMappingTable: 'KmsKeyMapping'
+})
+```
+
+Or via environment variables:
+
+```shell
+PRISMA_FIELD_ENCRYPTION_USE_KMS=true  
+PRISMA_FIELD_ENCRYPTION_KEY_STRATEGY=perTable
+PRISMA_FIELD_ENCRYPTION_KMS_KEY_MAPPING_TABLE=KmsKeyMapping
+```
+
+Then create a `KmsKeyMapping` table in your database with the following schema:
+
+```prisma
+model KmsKeyMapping {
+  tableName String @id
+  kmsKeyId  String
+}
+```
+
+Populate this table with the KMS key IDs for each table that has encrypted fields.
+
+Example Prisma schema for KMS key IDs per table:
+
+```prisma
+model User {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  name      String? /// @encrypted
+  posts     Post[]
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String     /// @encrypted
+  content    String?    /// @encrypted 
+  published  Boolean    @default(false)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]
+}
+
+model KmsKeyMapping {
+  tableName String @id
+  kmsKeyId  String
+}
+```
+
+### AWS KMS with KMS key IDs per tenant
+
+To use AWS KMS with different KMS key IDs for each tenant, set the following configuration options:
+
+```ts
+fieldEncryptionExtension({
+  useKms: true,
+  keyStrategy: 'perTenant',
+  kmsKeyMappingTable: 'KmsKeyMapping'  
+})
+```
+
+Or via environment variables:
+
+```shell
+PRISMA_FIELD_ENCRYPTION_USE_KMS=true
+PRISMA_FIELD_ENCRYPTION_KEY_STRATEGY=perTenant 
+PRISMA_FIELD_ENCRYPTION_KMS_KEY_MAPPING_TABLE=KmsKeyMapping
+```
+
+Then create a `KmsKeyMapping` table in your database with the following schema:
+
+```prisma
+model KmsKeyMapping {
+  tenantId String @id
+  kmsKeyId String
+}
+```
+
+Populate this table with the KMS key IDs for each tenant.
+
+In your Prisma schema, annotate the encrypted fields with the `tenantIdField` option to specify the field that contains the tenant ID for that record:
+
+```prisma
+model User {
+  id        Int    @id
+  tenantId  String
+  email     String /// @encrypted?tenantIdField=tenantId
+  name      String /// @encrypted?tenantIdField=tenantId
+  posts     Post[]
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  tenantId   String
+  title      String     /// @encrypted?tenantIdField=tenantId
+  content    String?    /// @encrypted?tenantIdField=tenantId
+  published  Boolean    @default(false)
+  author     User       @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories Category[]
+}
+
+model KmsKeyMapping {
+  tenantId String @id
+  kmsKeyId String  
+}
+```
+
+The library will use the value of the `tenantId` field to look up the corresponding KMS key ID in the `KmsKeyMapping` table.
+
+Note: The `tenantIdField` can be different for each model, allowing you to use different tenant ID fields for different tables.
 
 ## Custom Prisma client location
 

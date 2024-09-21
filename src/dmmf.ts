@@ -166,7 +166,8 @@ export function parseEncryptedAnnotation(
   }
   return {
     encrypt: mode !== 'readonly',
-    strictDecryption: mode === 'strict'
+    strictDecryption: mode === 'strict',
+    tenantIdField: query.get('tenantIdField') ?? undefined // Add this
   }
 }
 
